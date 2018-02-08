@@ -1,39 +1,58 @@
 import discord
 from google.cloud import translate
 
-Client = discord.Client()
+discord_client = discord.Client()
 
 keyfile = open("keys.txt", "r")
 key = keyfile.read(60)
 
-translate_client = translate.Client.from_service_account_json('api-key.json')
+global last_message
+last_message = "This is a placeholder"
 
-@Client.event
+
+@discord_client.event
 async def on_ready():
     print("/-- Translate -- Discord --\\")
     print("Logged in as: ")
-    print(Client.user.name)
-    print(Client.user.id)
+    print(discord_client.user.name)
+    print(discord_client.user.id)
     print("----------------------------")
 
-    await Client.change_presence(game=discord.Game(name=".translate help"))
+    await discord_client.change_presence(game=discord.Game(name=".translate help"))
     print("--- Bot Presence Changed ---")
     print("")
 
-@Client.event
+
+@discord_client.event
 async def on_message(message):
+    global last_message
     content = message.content
     if content.startswith(".translate"):
         # Makes the bot appear to be typing before sending its message
-        Client.send_typing(message.channel)
+        discord_client.send_typing(message.channel)
         if " " in content:
             # When the user wants to call for help, or translate to more than english, this will parse their intention
             args = content.split(" ", 1)[1]
             print(args)
             if args.lower() == "help":
-                print("call for help")
-
+                await discord_client.send_message(message.channel, "Help message TODO")
         else:
-            print("This is when it will just translate to english")
+            translation = translate_message(last_message, "en")
+            formatted_return = ("```" +
+                                "Translation: " + translation['translatedText'] + "\n"
+                                "Source Language : " + translation['detectedSourceLanguage'] +
+                                "```")
+            await discord_client.send_message(message.channel, formatted_return)
 
-Client.run(key)
+    # Sets this message as the "ast message sent". Keep this at the END of the method
+    last_message = content
+
+
+def translate_message(message, target):
+    translate_client = translate.Client.from_service_account_json('api-key.json')
+    result = translate_client.translate(message, target_language=target)
+    print(u'Text: {}'.format(result['input']))
+    return result;
+
+
+discord_client.run(key)
