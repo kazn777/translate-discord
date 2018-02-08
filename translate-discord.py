@@ -1,10 +1,12 @@
-import discord;
+import discord
+from google.cloud import translate
 
 Client = discord.Client()
 
 keyfile = open("keys.txt", "r")
 key = keyfile.read(60)
 
+translate_client = translate.Client.from_service_account_json('api-key.json')
 
 @Client.event
 async def on_ready():
@@ -17,7 +19,6 @@ async def on_ready():
     await Client.change_presence(game=discord.Game(name=".translate help"))
     print("--- Bot Presence Changed ---")
     print("")
-
 
 @Client.event
 async def on_message(message):
